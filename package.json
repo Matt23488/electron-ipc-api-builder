@@ -1,9 +1,9 @@
 {
   "name": "electron-ipc-api-builder",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "A collection of helpful APIs for working with electronjs.",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
   "repository": "https://github.com/Matt23488/electron-ipc-api-builder.git",
   "author": "Matthew Bryant",
   "license": "MIT",
