@@ -1,6 +1,6 @@
 {
   "name": "electron-ipc-api-builder",
-  "version": "1.0.2",
+  "version": "1.0.4",
   "description": "A collection of helpful APIs for working with electronjs.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -9,7 +9,7 @@
   "license": "MIT",
   "private": false,
   "directories": {
-    "lib": "dist"
+    "lib": "lib"
   },
   "dependencies": {
     "electron": "21.3.0"
@@ -28,6 +28,6 @@
     "version": "yarn format"
   },
   "files": [
-    "dist/**/*"
+    "lib/**/*"
   ]
 }
