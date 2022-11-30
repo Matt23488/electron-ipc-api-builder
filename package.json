@@ -1,0 +1,28 @@
+{
+  "name": "electron-ipc-api-builder",
+  "version": "1.0.0",
+  "description": "A collection of helpful APIs for working with electronjs.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "repository": "https://github.com/Matt23488/electron-ipc-api-builder.git",
+  "author": "Matthew Bryant",
+  "license": "MIT",
+  "private": false,
+  "dependencies": {
+    "electron": "21.3.0"
+  },
+  "devDependencies": {
+    "prettier": "^2.8.0",
+    "tslint": "^6.1.3",
+    "tslint-config-prettier": "^1.18.0",
+    "typescript": "^4.9.3"
+  },
+  "scripts": {
+    "build": "tsc",
+    "format": "prettier --write \"src/**/*.ts\" \"src/**/*.js\"",
+    "lint": "tslint -p tsconfig.json",
+    "prepare": "yarn build",
+    "version": "yarn format"
+  },
+  "files": ["dist/**/*"]
+}
