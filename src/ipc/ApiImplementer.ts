@@ -41,8 +41,10 @@ type ImplementApiFn = <
   MethodsApi extends Record<Methods, any[]>,
   Messages extends string,
   MessagesApi extends Record<Messages, any[]>,
+  DataKeys extends string,
+  Data extends Record<DataKeys, any>
 >(
-  api: ApiDescriptor<Name, Methods, MethodsApi, Messages, MessagesApi>,
+  api: ApiDescriptor<Name, Methods, MethodsApi, Messages, MessagesApi, DataKeys, Data>,
 ) => ApiImplementer<Methods, MethodsApi>;
 
 type BroadDescriptor = {
@@ -91,4 +93,25 @@ export const createMessageContext = <
   messageContext.send = (message: string, ...args: any[]) => window.webContents.send(`${api.name}-${message}`, ...args);
 
   return messageContext;
+};
+
+export const createWindowDataContext = <
+  Name extends string,
+  DataKeys extends string,
+  Data extends Record<DataKeys, any>
+>(
+  api: ApiDescriptor<Name, any, any, any, any, DataKeys, Data>
+) => {
+  const actualData = {} as Data;
+  const exposedData = {} as Readonly<Data>;
+
+  for (let dataKey of api.dataKeys.values) {
+    ipcMain.on(`${api.name}-set-window-data-${dataKey}`, (_, value) => actualData[dataKey] = value);
+
+    Object.defineProperty(exposedData, dataKey, {
+      get: () => actualData[dataKey]
+    });
+  }
+
+  return exposedData;
 };

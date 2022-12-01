@@ -8,14 +8,17 @@ type BridgeApiFn = <
   MethodsApi extends Record<Methods, any[]>,
   Messages extends string,
   MessagesApi extends Record<Messages, any[]>,
+  DataKeys extends string,
+  Data extends Record<DataKeys, any>
 >(
-  api: ApiDescriptor<Name, Methods, MethodsApi, Messages, MessagesApi>,
+  api: ApiDescriptor<Name, Methods, MethodsApi, Messages, MessagesApi, DataKeys, Data>,
 ) => void;
 
 type BroadDescriptor = {
   name: string;
   methods?: Utils.Types.StringUnion;
   messages?: Utils.Types.StringUnion;
+  dataKeys?: Utils.Types.StringUnion;
 };
 
 type ExposedApi = {
@@ -23,6 +26,9 @@ type ExposedApi = {
   messages: {
     on: Utils.Types.AnyFn;
     once: Utils.Types.AnyFn;
+  };
+  windowData: {
+    set: Utils.Types.AnyFn;
   };
 };
 
@@ -48,6 +54,14 @@ export const bridgeApi: BridgeApiFn = (api: BroadDescriptor) => {
     exposedApi.messages = {
       on: getRegistrationFn(ipcRenderer.on.bind(ipcRenderer)),
       once: getRegistrationFn(ipcRenderer.once.bind(ipcRenderer)),
+    };
+  }
+
+  if (api.dataKeys) {
+    const set = (dataKey: string, value: any) => ipcRenderer.send(`${api.name}-set-window-data-${dataKey}`, value);
+
+    exposedApi.windowData = {
+      set
     };
   }
 

@@ -29,19 +29,28 @@ type WindowExtensionMessages<Messages extends string, MessagesApi extends Record
   once: RegisterFn<Messages, MessagesApi>;
 };
 
+type WindowExtensionWindowData<DataKeys extends string, Data extends Record<DataKeys, any>> = {
+  set: <DataKey extends DataKeys>(dataKey: DataKey, value: Data[DataKey]) => void;
+};
+
 type WindowExtension<
   Name extends string,
   Methods extends string,
   MethodsApi extends Record<Methods, any[]>,
   Messages extends string,
   MessagesApi extends Record<Messages, any[]>,
+  DataKeys extends string,
+  Data extends Record<DataKeys, any>
 > = {
   [Key in Name]: (Utils.Types.Equals<Methods, string> extends true
     ? {}
     : { methods: WindowExtensionMethods<Methods, MethodsApi> }) &
     (Utils.Types.Equals<Messages, string> extends true
-      ? {}
-      : { messages: WindowExtensionMessages<Messages, MessagesApi> });
+    ? {}
+    : { messages: WindowExtensionMessages<Messages, MessagesApi> }) &
+    (Utils.Types.Equals<DataKeys, string> extends true
+    ? {}
+    : { windowData: WindowExtensionWindowData<DataKeys, Data> });
 };
 
 export type ApiDescriptor<
@@ -50,11 +59,14 @@ export type ApiDescriptor<
   MethodsApi extends Record<Methods, any[]> = any,
   Messages extends string = any,
   MessagesApi extends Record<Messages, any[]> = any,
+  DataKeys extends string = any,
+  Data extends Record<DataKeys, any> = any,
 > = {
   name: Name;
   methods: Utils.Types.StringUnion<Methods>;
   messages: Utils.Types.StringUnion<Messages>;
-  _windowExtension: WindowExtension<Name, Methods, MethodsApi, Messages, MessagesApi>;
+  dataKeys: Utils.Types.StringUnion<DataKeys>;
+  _windowExtension: WindowExtension<Name, Methods, MethodsApi, Messages, MessagesApi, DataKeys, Data>;
 };
 
 export type ApiName<Descriptor extends ApiDescriptor> = Descriptor extends ApiDescriptor<infer Name> ? Name : never;
@@ -84,6 +96,29 @@ export type ApiMessageSignatures<Descriptor extends ApiDescriptor> = Descriptor 
   infer MessagesApi
 >
   ? MessagesApi
+  : never;
+
+export type ApiWindowDataKeys<Descriptor extends ApiDescriptor> = Descriptor extends ApiDescriptor<
+  any,
+  any,
+  any,
+  any,
+  any,
+  infer DataKeys
+>
+  ? DataKeys
+  : never;
+
+export type ApiWindowData<Descriptor extends ApiDescriptor> = Descriptor extends ApiDescriptor<
+  any,
+  any,
+  any,
+  any,
+  any,
+  any,
+  infer Data
+>
+  ? Data
   : never;
 
 type MethodSignatureBuilder<
@@ -119,20 +154,28 @@ type DescribeMethodsCallback<Methods extends string, MethodsApi extends Record<M
   builder: MethodsBuilder,
 ) => MethodsBuilder<Methods, MethodsApi>;
 
-type DescribeMethodsFn<Name extends string, Messages extends string, MessagesApi extends Record<Messages, any[]>> = <
+type DescribeMethodsFn<
+  Name extends string,
+  Messages extends string,
+  MessagesApi extends Record<Messages, any[]>,
+  DataKeys extends string,
+  Data extends Record<DataKeys, any>
+> = <
   Methods extends string,
   MethodsApi extends Record<Methods, any[]>,
 >(
   callback: DescribeMethodsCallback<Methods, MethodsApi>,
-) => ApiBuilder<Name, Methods, MethodsApi, Messages, MessagesApi>;
+) => ApiBuilder<Name, Methods, MethodsApi, Messages, MessagesApi, DataKeys, Data>;
 
 type ApiBuilder_DescribeMethods<
   Name extends string,
-  Methods extends string,
   Messages extends string,
   MessagesApi extends Record<Messages, any[]>,
+  DataKeys extends string,
+  Data extends Record<DataKeys, any>,
+  Methods extends string,
 > = Utils.Types.Equals<Methods, string> extends true
-  ? { describeMethods: DescribeMethodsFn<Name, Messages, MessagesApi> }
+  ? { describeMethods: DescribeMethodsFn<Name, Messages, MessagesApi, DataKeys, Data> }
   : {};
 
 type MessageParametersBuilder<
@@ -165,21 +208,83 @@ type DescribeMessagesCallback<Messages extends string, MessagesApi extends Recor
   builder: MessagesBuilder,
 ) => MessagesBuilder<Messages, MessagesApi>;
 
-type DescribeMessagesFn<Name extends string, Methods extends string, MethodsApi extends Record<Methods, any[]>> = <
+type DescribeMessagesFn<
+  Name extends string,
+  Methods extends string,
+  MethodsApi extends Record<Methods, any[]>,
+  DataKeys extends string,
+  Data extends Record<DataKeys, any>
+> = <
   Messages extends string,
   MessagesApi extends Record<Messages, any[]>,
 >(
   callback: DescribeMessagesCallback<Messages, MessagesApi>,
-) => ApiBuilder<Name, Methods, MethodsApi, Messages, MessagesApi>;
+) => ApiBuilder<Name, Methods, MethodsApi, Messages, MessagesApi, DataKeys, Data>;
 
 type ApiBuilder_DescribeMessages<
   Name extends string,
   Methods extends string,
   MethodsApi extends Record<Methods, any[]>,
+  DataKeys extends string,
+  Data extends Record<DataKeys, any>,
   Messages extends string,
 > = Utils.Types.Equals<Messages, string> extends true
-  ? { describeMessages: DescribeMessagesFn<Name, Methods, MethodsApi> }
+  ? { describeMessages: DescribeMessagesFn<Name, Methods, MethodsApi, DataKeys, Data>; }
   : {};
+
+type WindowDataTypeBuilder<
+  DataKeys extends string,
+  Data extends Record<DataKeys, any>,
+  DataKey extends string,
+  _AndTypeFnFirst = <T>() => WindowDataBuilder<DataKey, Record<DataKey, T>>,
+  _AndTypeFnGeneral = <T>() => WindowDataBuilder<
+    DataKeys | DataKey,
+    Data & Record<DataKey, T>
+  >,
+> = Utils.Types.Equals<DataKeys, string> extends true
+  ? {
+      andType: _AndTypeFnFirst;
+    }
+  : DataKey extends DataKeys
+    ? never
+    : {
+        andType: _AndTypeFnGeneral;
+      };
+
+type WindowDataBuilder<
+  DataKeys extends string = string,
+  Data extends Record<DataKeys, any> = Record<DataKeys, any>
+> = {
+  withKey: <DataKey extends string>(dataKey: DataKey) => WindowDataTypeBuilder<DataKeys, Data, DataKey>;
+};
+
+type DescribeWindowDataCallback<DataKeys extends string, Data extends Record<DataKeys, any>> = (
+  builder: WindowDataBuilder
+) => WindowDataBuilder<DataKeys, Data>;
+
+type DescribeWindowDataFn<
+  Name extends string,
+  Methods extends string,
+  MethodsApi extends Record<Methods, any[]>,
+  Messages extends string,
+  MessagesApi extends Record<Messages, any[]>,
+> = <
+  DataKeys extends string,
+  Data extends Record<DataKeys, any>
+>(
+  callback: DescribeWindowDataCallback<DataKeys, Data>
+) => ApiBuilder<Name, Methods, MethodsApi, Messages, MessagesApi, DataKeys, Data>;
+
+type ApiBuilder_DescribeWindowData<
+  Name extends string,
+  Methods extends string,
+  MethodsApi extends Record<Methods, any[]>,
+  Messages extends string,
+  MessagesApi extends Record<Messages, any[]>,
+  DataKeys extends string,
+> = Utils.Types.Equals<DataKeys, string> extends true
+    ? { describeWindowData: DescribeWindowDataFn<Name, Methods, MethodsApi, Messages, MessagesApi>; }
+    : {};
 
 type ApiBuilder_GetDescriptor_Exposed<
   Name extends string,
@@ -187,8 +292,10 @@ type ApiBuilder_GetDescriptor_Exposed<
   MethodsApi extends Record<Methods, any[]>,
   Messages extends string,
   MessagesApi extends Record<Messages, any[]>,
+  DataKeys extends string,
+  Data extends Record<DataKeys, any>
 > = {
-  getDescriptor: () => ApiDescriptor<Name, Methods, MethodsApi, Messages, MessagesApi>;
+  getDescriptor: () => ApiDescriptor<Name, Methods, MethodsApi, Messages, MessagesApi, DataKeys, Data>;
 };
 
 type ApiBuilder_GetDescriptor<
@@ -197,11 +304,15 @@ type ApiBuilder_GetDescriptor<
   MethodsApi extends Record<Methods, any[]>,
   Messages extends string,
   MessagesApi extends Record<Messages, any[]>,
-> = Utils.Types.Equals<Methods, string> extends true
-  ? Utils.Types.Equals<Messages, string> extends true
+  DataKeys extends string,
+  Data extends Record<DataKeys, any>
+> = Utils.Types.IfAll<[
+      Utils.Types.Equals<Methods, string>,
+      Utils.Types.Equals<Messages, string>,
+      Utils.Types.Equals<DataKeys, string>,
+    ]> extends true
     ? {}
-    : ApiBuilder_GetDescriptor_Exposed<Name, Methods, MethodsApi, Messages, MessagesApi>
-  : ApiBuilder_GetDescriptor_Exposed<Name, Methods, MethodsApi, Messages, MessagesApi>;
+    : ApiBuilder_GetDescriptor_Exposed<Name, Methods, MethodsApi, Messages, MessagesApi, DataKeys, Data>;
 
 type ApiBuilder<
   Name extends string = string,
@@ -209,9 +320,12 @@ type ApiBuilder<
   MethodsApi extends Record<Methods, any[]> = Record<Methods, any[]>,
   Messages extends string = string,
   MessagesApi extends Record<Messages, any[]> = Record<Messages, any[]>,
-> = ApiBuilder_DescribeMethods<Name, Methods, Messages, MessagesApi> &
-  ApiBuilder_DescribeMessages<Name, Methods, MethodsApi, Messages> &
-  ApiBuilder_GetDescriptor<Name, Methods, MethodsApi, Messages, MessagesApi>;
+  DataKeys extends string = string,
+  Data extends Record<DataKeys, any> = Record<DataKeys, any>
+> = ApiBuilder_DescribeMethods<Name, Messages, MessagesApi, DataKeys, Data, Methods> &
+  ApiBuilder_DescribeMessages<Name, Methods, MethodsApi, DataKeys, Data, Messages> &
+  ApiBuilder_DescribeWindowData<Name, Methods, MethodsApi, Messages, MessagesApi, DataKeys> &
+  ApiBuilder_GetDescriptor<Name, Methods, MethodsApi, Messages, MessagesApi, DataKeys, Data>;
 //#endregion
 
 export const describeApi = <Name extends string>(name: Name) => {
@@ -253,17 +367,38 @@ export const describeApi = <Name extends string>(name: Name) => {
     return apiBuilder;
   };
 
+  const dataKeys: string[] = [];
+  const describeWindowData = (builderFn: (builder: any) => any) => {
+    const withKey = (dataKey: string) => {
+      dataKeys.push(dataKey);
+      return windowDataBuilder;
+    };
+
+    const andType = () => windowDataBuilder;
+
+    const windowDataBuilder = {
+      withKey,
+      andType
+    };
+
+    builderFn(windowDataBuilder);
+
+    return apiBuilder;
+  };
+
   const getDescriptor = () => {
     return Object.freeze({
       name,
       methods: Utils.Types.makeStringUnion(...methods),
       messages: Utils.Types.makeStringUnion(...messages),
+      dataKeys: Utils.Types.makeStringUnion(...dataKeys)
     });
   };
 
   const apiBuilder = {
     describeMethods,
     describeMessages,
+    describeWindowData,
     getDescriptor,
   };
 

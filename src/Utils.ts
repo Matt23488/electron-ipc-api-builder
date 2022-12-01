@@ -8,6 +8,20 @@ namespace Utils {
 
     export type Equals<A, B> = IfEquals<A, B, true, false>;
 
+    export type IfAny<Bools extends boolean[]> =
+      Bools extends [infer Next extends boolean, ...infer Rest extends boolean[]]
+      ? Next extends true
+        ? true
+        : IfAny<Rest>
+      : false;
+
+    export type IfAll<Bools extends boolean[]> =
+      Bools extends [infer Next extends boolean, ...infer Rest extends boolean[]]
+      ? Next extends true
+        ? IfAll<Rest>
+        : false
+      : true;
+
     export type AnyFn = (...args: any[]) => any;
 
     export type StringUnion<Values extends string = string> = {
