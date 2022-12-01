@@ -90,17 +90,23 @@ type MethodSignatureBuilder<
   Methods extends string,
   MethodsApi extends Record<Methods, any[]>,
   Method extends string,
-  _AndSignatureFnFirst = <Return = void, Parameters extends any[] = []>() => MethodsBuilder<Method, Record<Method, [_: Return, ...params: Parameters]>>,
-  _AndSignatureFnGeneral = <Return = void, Parameters extends any[] = []>() => MethodsBuilder<Method, Record<Methods | Method, MethodsApi & [_: Return, ...params: Parameters]>>,
+  _AndSignatureFnFirst = <Return = void, Parameters extends any[] = []>() => MethodsBuilder<
+    Method,
+    Record<Method, [_: Return, ...params: Parameters]>
+  >,
+  _AndSignatureFnGeneral = <Return = void, Parameters extends any[] = []>() => MethodsBuilder<
+    Method,
+    Record<Methods | Method, MethodsApi & [_: Return, ...params: Parameters]>
+  >,
 > = Utils.Types.Equals<Methods, string> extends true
-    ? {
+  ? {
       andSignature: _AndSignatureFnFirst;
     }
-    : Method extends Methods
-      ? never
-      : {
-        andSignature: _AndSignatureFnGeneral;
-      };
+  : Method extends Methods
+  ? never
+  : {
+      andSignature: _AndSignatureFnGeneral;
+    };
 
 type MethodsBuilder<
   Methods extends string = string,
@@ -134,16 +140,19 @@ type MessageParametersBuilder<
   MessagesApi extends Record<Messages, any[]>,
   Message extends string,
   _AndParametersFnFirst = <Parameters extends any[] = []>() => MessagesBuilder<Message, Record<Message, Parameters>>,
-  _AndParametersFnGeneral = <Parameters extends any[] = []>() => MessagesBuilder<Messages | Message, MessagesApi & Record<Message, Parameters>>
+  _AndParametersFnGeneral = <Parameters extends any[] = []>() => MessagesBuilder<
+    Messages | Message,
+    MessagesApi & Record<Message, Parameters>
+  >,
 > = Utils.Types.Equals<Messages, string> extends true
-    ? {
+  ? {
       andParameters: _AndParametersFnFirst;
     }
-    : Message extends Messages
-      ? never
-      : {
-        andParameters: _AndParametersFnGeneral;
-      };
+  : Message extends Messages
+  ? never
+  : {
+      andParameters: _AndParametersFnGeneral;
+    };
 
 type MessagesBuilder<
   Messages extends string = string,
