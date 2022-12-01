@@ -33,7 +33,7 @@ export type ApiImplementationFn<
   _MethodsApi extends Record<_Methods, any[]> = ApiMethodSignatures<Descriptor>,
   _Messages extends string = ApiMessages<Descriptor>,
   _MessagesApi extends Record<_Messages, any[]> = ApiMessageSignatures<Descriptor>,
-> = (builder: ReturnType<typeof implementApi<_Name, _Methods, _MethodsApi, _Messages, _MessagesApi>>) => {
+> = (window: Electron.BrowserWindow, builder: ReturnType<typeof implementApi<_Name, _Methods, _MethodsApi, _Messages, _MessagesApi>>) => {
   finalize: () => void;
 };
 
@@ -107,7 +107,7 @@ export const describeWindow = <
 
     if (api && apiImplementation) {
       const builder = implementApi(api);
-      apiImplementation(builder).finalize();
+      apiImplementation(window, builder).finalize();
     }
 
     // TODO: More robust check. A url could end with .html and break this.
