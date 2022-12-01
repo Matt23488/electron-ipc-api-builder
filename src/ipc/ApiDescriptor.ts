@@ -36,10 +36,10 @@ type WindowExtension<
   Messages extends string,
   MessagesApi extends Record<Messages, any[]>,
 > = {
-  [Key in Name]: (Utils.Types.Equals<Methods, never> extends true
+  [Key in Name]: (Utils.Types.Equals<Methods, string> extends true
     ? {}
     : { methods: WindowExtensionMethods<Methods, MethodsApi> }) &
-    (Utils.Types.Equals<Messages, never> extends true
+    (Utils.Types.Equals<Messages, string> extends true
       ? {}
       : { messages: WindowExtensionMessages<Messages, MessagesApi> });
 };
@@ -90,17 +90,20 @@ type MethodSignatureBuilder<
   Methods extends string,
   MethodsApi extends Record<Methods, any[]>,
   Method extends string,
-> = Method extends Methods
-  ? never
-  : {
-      andSignature: <Return, Parameters extends any[] = []>() => MethodsBuilder<
-        Methods | Method,
-        MethodsApi & Record<Method, [_: Return, ...params: Parameters]>
-      >;
-    };
+  _AndSignatureFnFirst = <Return = void, Parameters extends any[] = []>() => MethodsBuilder<Method, Record<Method, [_: Return, ...params: Parameters]>>,
+  _AndSignatureFnGeneral = <Return = void, Parameters extends any[] = []>() => MethodsBuilder<Method, Record<Methods | Method, MethodsApi & [_: Return, ...params: Parameters]>>,
+> = Utils.Types.Equals<Methods, string> extends true
+    ? {
+      andSignature: _AndSignatureFnFirst;
+    }
+    : Method extends Methods
+      ? never
+      : {
+        andSignature: _AndSignatureFnGeneral;
+      };
 
 type MethodsBuilder<
-  Methods extends string = never,
+  Methods extends string = string,
   MethodsApi extends Record<Methods, any[]> = Record<Methods, any[]>,
 > = {
   withMethod: <Method extends string>(method: Method) => MethodSignatureBuilder<Methods, MethodsApi, Method>;
@@ -122,7 +125,7 @@ type ApiBuilder_DescribeMethods<
   Methods extends string,
   Messages extends string,
   MessagesApi extends Record<Messages, any[]>,
-> = Utils.Types.Equals<Methods, never> extends true
+> = Utils.Types.Equals<Methods, string> extends true
   ? { describeMethods: DescribeMethodsFn<Name, Messages, MessagesApi> }
   : {};
 
@@ -130,17 +133,20 @@ type MessageParametersBuilder<
   Messages extends string,
   MessagesApi extends Record<Messages, any[]>,
   Message extends string,
-> = Message extends Messages
-  ? {}
-  : {
-      andParameters: <Parameters extends any[] = []>() => MessagesBuilder<
-        Messages | Message,
-        MessagesApi & Record<Message, Parameters>
-      >;
-    };
+  _AndParametersFnFirst = <Parameters extends any[] = []>() => MessagesBuilder<Message, Record<Message, Parameters>>,
+  _AndParametersFnGeneral = <Parameters extends any[] = []>() => MessagesBuilder<Messages | Message, MessagesApi & Record<Message, Parameters>>
+> = Utils.Types.Equals<Messages, string> extends true
+    ? {
+      andParameters: _AndParametersFnFirst;
+    }
+    : Message extends Messages
+      ? never
+      : {
+        andParameters: _AndParametersFnGeneral;
+      };
 
 type MessagesBuilder<
-  Messages extends string = never,
+  Messages extends string = string,
   MessagesApi extends Record<Messages, any[]> = Record<Messages, any[]>,
 > = {
   withMessage: <Message extends string>(message: Message) => MessageParametersBuilder<Messages, MessagesApi, Message>;
@@ -162,7 +168,7 @@ type ApiBuilder_DescribeMessages<
   Methods extends string,
   MethodsApi extends Record<Methods, any[]>,
   Messages extends string,
-> = Utils.Types.Equals<Messages, never> extends true
+> = Utils.Types.Equals<Messages, string> extends true
   ? { describeMessages: DescribeMessagesFn<Name, Methods, MethodsApi> }
   : {};
 
@@ -182,17 +188,17 @@ type ApiBuilder_GetDescriptor<
   MethodsApi extends Record<Methods, any[]>,
   Messages extends string,
   MessagesApi extends Record<Messages, any[]>,
-> = Utils.Types.Equals<Methods, never> extends true
-  ? Utils.Types.Equals<Messages, never> extends true
+> = Utils.Types.Equals<Methods, string> extends true
+  ? Utils.Types.Equals<Messages, string> extends true
     ? {}
     : ApiBuilder_GetDescriptor_Exposed<Name, Methods, MethodsApi, Messages, MessagesApi>
   : ApiBuilder_GetDescriptor_Exposed<Name, Methods, MethodsApi, Messages, MessagesApi>;
 
 type ApiBuilder<
-  Name extends string = never,
-  Methods extends string = never,
+  Name extends string = string,
+  Methods extends string = string,
   MethodsApi extends Record<Methods, any[]> = Record<Methods, any[]>,
-  Messages extends string = never,
+  Messages extends string = string,
   MessagesApi extends Record<Messages, any[]> = Record<Messages, any[]>,
 > = ApiBuilder_DescribeMethods<Name, Methods, Messages, MessagesApi> &
   ApiBuilder_DescribeMessages<Name, Methods, MethodsApi, Messages> &
