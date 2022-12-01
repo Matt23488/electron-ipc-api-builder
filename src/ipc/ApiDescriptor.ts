@@ -95,8 +95,8 @@ type MethodSignatureBuilder<
     Record<Method, [_: Return, ...params: Parameters]>
   >,
   _AndSignatureFnGeneral = <Return = void, Parameters extends any[] = []>() => MethodsBuilder<
-    Method,
-    Record<Methods | Method, MethodsApi & [_: Return, ...params: Parameters]>
+    Methods | Method,
+    MethodsApi & Record<Method, [_: Return, ...params: Parameters]>
   >,
 > = Utils.Types.Equals<Methods, string> extends true
   ? {

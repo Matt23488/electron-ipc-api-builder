@@ -1,5 +1,6 @@
 .vscode/
 node_modules/
 lib/
+/src/scratchpad/
 
 yarn-error.log
