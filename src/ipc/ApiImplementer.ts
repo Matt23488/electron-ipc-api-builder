@@ -103,13 +103,14 @@ export const createWindowDataContext = <
   api: ApiDescriptor<Name, any, any, any, any, DataKeys, Data>
 ) => {
   const actualData = {} as Data;
-  const exposedData = {} as Readonly<Data>;
+  const exposedData = {} as Data;
 
   for (let dataKey of api.dataKeys.values) {
     ipcMain.on(`${api.name}-set-window-data-${dataKey}`, (_, value) => actualData[dataKey] = value);
 
     Object.defineProperty(exposedData, dataKey, {
-      get: () => actualData[dataKey]
+      get: () => actualData[dataKey],
+      set: (value: any) => actualData[dataKey] = value
     });
   }
 
