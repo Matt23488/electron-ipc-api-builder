@@ -167,7 +167,7 @@ export const describeWindow = <
 
     if (process.env.NODE_ENV === 'development') window.webContents.openDevTools();
 
-    return window;
+    return context;
   };
 
   const show = () => createWindow(false);
