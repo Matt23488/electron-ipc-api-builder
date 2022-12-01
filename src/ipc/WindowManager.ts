@@ -1,5 +1,12 @@
 import { BrowserWindow, Menu } from 'electron';
-import { ApiDescriptor } from './ApiDescriptor';
+import {
+  ApiDescriptor,
+  ApiMessages,
+  ApiMessageSignatures,
+  ApiMethods,
+  ApiMethodSignatures,
+  ApiName,
+} from './ApiDescriptor';
 import { createMessageContext, implementApi } from './ApiImplementer';
 import Utils from '../Utils';
 
@@ -19,6 +26,17 @@ type GetMenuTemplateFn<
       messageContext: ReturnType<typeof createMessageContext<Name, Messages, MessagesApi>>,
     ) => Array<Electron.MenuItemConstructorOptions | Electron.MenuItem>;
 
+export type ApiImplementationFn<
+  Descriptor extends ApiDescriptor,
+  _Name extends string = ApiName<Descriptor>,
+  _Methods extends string = ApiMethods<Descriptor>,
+  _MethodsApi extends Record<_Methods, any[]> = ApiMethodSignatures<Descriptor>,
+  _Messages extends string = ApiMessages<Descriptor>,
+  _MessagesApi extends Record<_Messages, any[]> = ApiMessageSignatures<Descriptor>,
+> = (builder: ReturnType<typeof implementApi<_Name, _Methods, _MethodsApi, _Messages, _MessagesApi>>) => {
+  finalize: () => void;
+};
+
 type WindowApiProperties<
   Name extends string = never,
   Methods extends string = never,
@@ -32,9 +50,7 @@ type WindowApiProperties<
     }
   : {
       api: ApiDescriptor<Name, Methods, MethodsApi, Messages, MessagesApi>;
-      apiImplementation: (
-        builder: ReturnType<typeof implementApi<Name, Methods, MethodsApi, Messages, MessagesApi>>,
-      ) => { finalize: () => void };
+      apiImplementation: ApiImplementationFn<ApiDescriptor<Name, Methods, MethodsApi, Messages, MessagesApi>>;
     };
 
 type CreateWindowProperties<

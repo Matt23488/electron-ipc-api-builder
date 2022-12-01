@@ -45,17 +45,46 @@ type WindowExtension<
 };
 
 export type ApiDescriptor<
-  Name extends string,
-  Methods extends string,
-  MethodsApi extends Record<Methods, any[]>,
-  Messages extends string,
-  MessagesApi extends Record<Messages, any[]>,
+  Name extends string = any,
+  Methods extends string = any,
+  MethodsApi extends Record<Methods, any[]> = any,
+  Messages extends string = any,
+  MessagesApi extends Record<Messages, any[]> = any,
 > = {
   name: Name;
   methods: Utils.Types.StringUnion<Methods>;
   messages: Utils.Types.StringUnion<Messages>;
   _windowExtension: WindowExtension<Name, Methods, MethodsApi, Messages, MessagesApi>;
 };
+
+export type ApiName<Descriptor extends ApiDescriptor> = Descriptor extends ApiDescriptor<infer Name> ? Name : never;
+export type ApiMethods<Descriptor extends ApiDescriptor> = Descriptor extends ApiDescriptor<any, infer Methods>
+  ? Methods
+  : never;
+export type ApiMethodSignatures<Descriptor extends ApiDescriptor> = Descriptor extends ApiDescriptor<
+  any,
+  any,
+  infer MethodsApi
+>
+  ? MethodsApi
+  : never;
+export type ApiMessages<Descriptor extends ApiDescriptor> = Descriptor extends ApiDescriptor<
+  any,
+  any,
+  any,
+  infer Messages
+>
+  ? Messages
+  : never;
+export type ApiMessageSignatures<Descriptor extends ApiDescriptor> = Descriptor extends ApiDescriptor<
+  any,
+  any,
+  any,
+  any,
+  infer MessagesApi
+>
+  ? MessagesApi
+  : never;
 
 type MethodSignatureBuilder<
   Methods extends string,
