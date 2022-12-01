@@ -77,7 +77,7 @@ export const createMessageContext = <
   Messages extends string,
   MessagesApi extends Record<Messages, any[]>,
 >(
-  api: ApiDescriptor<Name, Messages, MessagesApi, any, any>,
+  api: ApiDescriptor<Name, any, any, Messages, MessagesApi>,
   window: Electron.BrowserWindow,
 ) => {
   //#region Types

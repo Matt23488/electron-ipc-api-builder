@@ -46,8 +46,8 @@ export const bridgeApi: BridgeApiFn = (api: BroadDescriptor) => {
     };
 
     exposedApi.messages = {
-      on: getRegistrationFn(ipcRenderer.on),
-      once: getRegistrationFn(ipcRenderer.once),
+      on: getRegistrationFn(ipcRenderer.on.bind(ipcRenderer)),
+      once: getRegistrationFn(ipcRenderer.once.bind(ipcRenderer)),
     };
   }
 
