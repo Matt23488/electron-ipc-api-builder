@@ -1,6 +1,7 @@
 import { IpcMainInvokeEvent, app, ipcMain } from 'electron';
 import Utils from '../Utils';
 import { ApiDescriptor } from './ApiDescriptor';
+import { isLoggingEnabled } from './config';
 
 type ApiReturn<Signature extends any[]> = Signature extends [infer Return, ...any[]] ? Return : never;
 type ApiParams<Signature extends any[]> = Signature extends [any, ...infer Params] ? Params : never;
@@ -59,8 +60,13 @@ type BroadDescriptor = {
 export const implementApi: ImplementApiFn = (api: BroadDescriptor) => {
   const handlers = {} as Record<string, Utils.Types.AnyFn>;
 
+  const loggingEnabled = isLoggingEnabled();
   const implement = (method: string, handler: Utils.Types.AnyFn) => {
-    handlers[method] = handler;
+    handlers[method] =  (...args) => {
+      if (loggingEnabled)
+        console.log(`Main process received method call '${api.name}-${method}'. Args:`, args);
+      handler(...args);
+    }
     return ipcBuilder;
   };
 
@@ -117,8 +123,14 @@ export const createWindowDataContext = <
   const data = {} as Data;
   const handlers = {} as Record<DataKeys, Utils.Types.AnyFn>;
 
+  const loggingEnabled = isLoggingEnabled();
+
   for (let dataKey of api.dataKeys.values) {
-    handlers[dataKey] = (_, value) => data[dataKey] = value;
+    handlers[dataKey] = (_, value) => {
+      if (loggingEnabled)
+        console.log(`Main process received window data update on channel '${api.name}-set-window-data-${dataKey}'. Value:`, value);
+      data[dataKey] = value;
+    }
     ipcMain.on(`${api.name}-set-window-data-${dataKey}`, handlers[dataKey]);
   }
 
