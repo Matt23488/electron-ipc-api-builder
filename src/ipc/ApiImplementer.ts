@@ -130,6 +130,7 @@ export const createWindowDataContext = <
 >(
   api: ApiDescriptor<Name, any, any, any, any, DataKeys, Data>
 ) => {
+  const backingData = {} as Data;
   const data = {} as Data;
   const handlers = {} as Record<DataKeys, Utils.Types.AnyFn>;
 
@@ -140,8 +141,14 @@ export const createWindowDataContext = <
     handlers[dataKey] = (_, value) => {
       if (loggingEnabled)
         console.log(`Main process received window data update on channel '${channel}'. Value:`, value);
-      data[dataKey] = value;
+      backingData[dataKey] = value;
     }
+
+    Object.defineProperty(data, dataKey, {
+      get: () => backingData[dataKey],
+      set: value => backingData[dataKey] = value
+    });
+
     ipcMain.on(channel, handlers[dataKey]);
   }
 
