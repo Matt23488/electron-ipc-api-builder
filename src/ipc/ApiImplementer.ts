@@ -2,6 +2,7 @@ import { IpcMainInvokeEvent, app, ipcMain } from 'electron';
 import Utils from '../Utils';
 import { ApiDescriptor } from './ApiDescriptor';
 import { isLoggingEnabled } from './config';
+import { getMessageChannelName, getMethodChannelName, getWindowDataChannelName } from './getChannelName';
 
 type ApiReturn<Signature extends any[]> = Signature extends [infer Return, ...any[]] ? Return : never;
 type ApiParams<Signature extends any[]> = Signature extends [any, ...infer Params] ? Params : never;
@@ -64,7 +65,7 @@ export const implementApi: ImplementApiFn = (api: BroadDescriptor) => {
   const implement = (method: string, handler: Utils.Types.AnyFn) => {
     handlers[method] =  (...args) => {
       if (loggingEnabled)
-        console.log(`Main process received method call '${api.name}-${method}'. Args:`, args.slice(1));
+        console.log(`Main process received method call '${getMethodChannelName(api.name, method)}'. Args:`, args.slice(1));
       handler(...args);
     }
     return ipcBuilder;
@@ -73,13 +74,13 @@ export const implementApi: ImplementApiFn = (api: BroadDescriptor) => {
   const finalize = () => {
     app.whenReady().then(() => {
       for (let method of api.methods.values)
-        ipcMain.handle(`${api.name}-${method}`, handlers[method]);
+        ipcMain.handle(getMethodChannelName(api.name, method), handlers[method]);
     });
 
     return {
       disconnect: () => {
         for (let method of api.methods.values)
-          ipcMain.removeHandler(`${api.name}-${method}`);
+          ipcMain.removeHandler(getMethodChannelName(api.name, method));
       }
     };
   };
@@ -108,7 +109,7 @@ export const createMessageContext = <
 
   const messageContext = {} as MessageContext;
 
-  messageContext.send = (message: string, ...args: any[]) => window.webContents.send(`${api.name}-${message}`, ...args);
+  messageContext.send = (message: string, ...args: any[]) => window.webContents.send(getMessageChannelName(api.name, message), ...args);
 
   return messageContext;
 };
@@ -126,17 +127,18 @@ export const createWindowDataContext = <
   const loggingEnabled = isLoggingEnabled();
 
   for (let dataKey of api.dataKeys.values) {
+    const channel = getWindowDataChannelName(api.name, dataKey);
     handlers[dataKey] = (_, value) => {
       if (loggingEnabled)
-        console.log(`Main process received window data update on channel '${api.name}-set-window-data-${dataKey}'. Value:`, value);
+        console.log(`Main process received window data update on channel '${channel}'. Value:`, value);
       data[dataKey] = value;
     }
-    ipcMain.on(`${api.name}-set-window-data-${dataKey}`, handlers[dataKey]);
+    ipcMain.on(channel, handlers[dataKey]);
   }
 
   const disconnect = () => {
     for (let dataKey of api.dataKeys.values)
-      ipcMain.off(`${api.name}-set-window-data-${dataKey}`, handlers[dataKey]);
+      ipcMain.off(getWindowDataChannelName(api.name, dataKey), handlers[dataKey]);
   }
 
   return {

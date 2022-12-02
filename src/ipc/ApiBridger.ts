@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer } from 'electron';
 import Utils from '../Utils';
 import { ApiDescriptor } from './ApiDescriptor';
 import { isLoggingEnabled } from './config';
+import { getMessageChannelName, getMethodChannelName, getWindowDataChannelName } from './getChannelName';
 
 type BridgeApiFn = <
   Name extends string,
@@ -42,7 +43,7 @@ export const bridgeApi: BridgeApiFn = (api: BroadDescriptor) => {
     exposedApi.methods = {};
     for (let method of api.methods.values)
       exposedApi.methods[method] = (...args: any[]) => {
-        const channel = `${api.name}-${method}`;
+        const channel = getMethodChannelName(api.name, method);
         if (loggingEnabled)
           console.log(`Renderer invoked method on channel '${channel}'. Args:`, args.slice(1));
         ipcRenderer.invoke(channel, ...args);
@@ -51,7 +52,7 @@ export const bridgeApi: BridgeApiFn = (api: BroadDescriptor) => {
 
   if (api.messages) {
     const getRegistrationFn = (onOrOnce: typeof ipcRenderer.on) => (message: string, callback: Utils.Types.AnyFn) => {
-      const channel = `${api.name}-${message}`;
+      const channel = getMessageChannelName(api.name, message);
       onOrOnce(channel, callback);
 
       return {
@@ -67,7 +68,7 @@ export const bridgeApi: BridgeApiFn = (api: BroadDescriptor) => {
 
   if (api.dataKeys) {
     const set = (dataKey: string, value: any) => {
-      const channel = `${api.name}-set-window-data-${dataKey}`;
+      const channel = getWindowDataChannelName(api.name, dataKey);
       if (loggingEnabled)
         console.log(`Renderer setting window data on channel '${channel}'. Value:`, value);
       ipcRenderer.send(channel, value);
