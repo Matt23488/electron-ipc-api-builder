@@ -79,6 +79,9 @@ export const implementApi: ImplementApiFn = (api: BroadDescriptor) => {
 
     return {
       disconnect: () => {
+        if (loggingEnabled)
+          console.log(`disconnect() called for '${api.name}' Methods.`);
+
         for (let method of api.methods.values)
           ipcMain.removeHandler(getMethodChannelName(api.name, method));
       }
@@ -137,6 +140,9 @@ export const createWindowDataContext = <
   }
 
   const disconnect = () => {
+    if (loggingEnabled)
+      console.log(`disconnect() called for '${api.name}' WindowDataContext.`);
+    
     for (let dataKey of api.dataKeys.values)
       ipcMain.off(getWindowDataChannelName(api.name, dataKey), handlers[dataKey]);
   }
