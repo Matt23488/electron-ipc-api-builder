@@ -44,7 +44,7 @@ export const bridgeApi: BridgeApiFn = (api: BroadDescriptor) => {
       exposedApi.methods[method] = (...args: any[]) => {
         const channel = `${api.name}-${method}`;
         if (loggingEnabled)
-          console.log(`Renderer invoked method on channel '${channel}'. Args:`, args);
+          console.log(`Renderer invoked method on channel '${channel}'. Args:`, args.slice(1));
         ipcRenderer.invoke(channel, ...args);
       }
   }

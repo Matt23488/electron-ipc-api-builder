@@ -64,7 +64,7 @@ export const implementApi: ImplementApiFn = (api: BroadDescriptor) => {
   const implement = (method: string, handler: Utils.Types.AnyFn) => {
     handlers[method] =  (...args) => {
       if (loggingEnabled)
-        console.log(`Main process received method call '${api.name}-${method}'. Args:`, args);
+        console.log(`Main process received method call '${api.name}-${method}'. Args:`, args.slice(1));
       handler(...args);
     }
     return ipcBuilder;
