@@ -63,10 +63,10 @@ export const implementApi: ImplementApiFn = (api: BroadDescriptor) => {
 
   const loggingEnabled = isLoggingEnabled();
   const implement = (method: string, handler: Utils.Types.AnyFn) => {
-    handlers[method] =  (...args) => {
+    handlers[method] = (...args) => {
       if (loggingEnabled)
         console.log(`Main process received method call '${getMethodChannelName(api.name, method)}'. Args:`, args.slice(1));
-      handler(...args);
+      return handler(...args);
     }
     return ipcBuilder;
   };
@@ -112,7 +112,13 @@ export const createMessageContext = <
 
   const messageContext = {} as MessageContext;
 
-  messageContext.send = (message: string, ...args: any[]) => window.webContents.send(getMessageChannelName(api.name, message), ...args);
+
+  messageContext.send = (message: string, ...args: any[]) => {
+    const channel = getMessageChannelName(api.name, message);
+    if (isLoggingEnabled())
+      console.log(`Main process sending message on channel '${channel}'`)
+    window.webContents.send(channel, ...args);
+  }
 
   return messageContext;
 };
