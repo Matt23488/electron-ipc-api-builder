@@ -9,7 +9,7 @@ import {
   ApiWindowData,
   ApiWindowDataKeys,
 } from './ApiDescriptor';
-import { createMessageContext, createWindowDataContext, implementApi } from './ApiImplementer';
+import { ApiImplementer, createMessageContext, createWindowDataContext, implementApi } from './ApiImplementer';
 import Utils from '../Utils';
 
 type BrowserWindowConstructorKeys = 'width' | 'height';
@@ -38,9 +38,7 @@ export type ApiImplementationFn<
 > = (
   builder: ReturnType<typeof implementApi<_Name, _Methods, _MethodsApi, _Messages, _MessagesApi, _DataKeys, _Data>>,
   context: WindowContext<_Name, _Messages, _MessagesApi, _DataKeys, _Data>,
-) => {
-  finalize: () => void;
-};
+) => ApiImplementer<_Methods, _MethodsApi, _Methods>;
 
 type WindowContext<
   Name extends string,
@@ -57,13 +55,8 @@ type WindowContext<
   & (
     Utils.Types.Equals<DataKeys, string> extends true
     ? {}
-    : { data: ReturnType<typeof createWindowDataContext<Name, DataKeys, Data>>; }
+    : { data: ReturnType<typeof createWindowDataContext<Name, DataKeys, Data>>['data']; }
   );
-// > = {
-//   window: Electron.BrowserWindow;
-//   data: ReturnType<typeof createWindowDataContext<Name, DataKeys, Data>>,
-//   messages: ReturnType<typeof createMessageContext<Name, Messages, MessagesApi>>
-// };
 
 type WindowApiProperties<
   Name extends string,
@@ -144,7 +137,7 @@ export const describeWindow = <
 
     const context = {
       window,
-      data: windowDataContext,
+      data: windowDataContext.data,
       messages: messageContext
     } satisfies WindowContext<Name, Messages, MessagesApi, DataKeys, Data>;
 
@@ -158,8 +151,12 @@ export const describeWindow = <
     if (api && apiImplementation) {
       const builder = implementApi(api);
 
-      apiImplementation(builder, context).finalize();
+      const implementedApi = apiImplementation(builder, context).finalize();
+
+      window.once('closed', implementedApi.disconnect);
     }
+
+    window.once('closed', windowDataContext.disconnect);
 
     // TODO: More robust check. A url could end with .html and break this.
     if (entryPoint.endsWith('.html')) window.loadFile(entryPoint);

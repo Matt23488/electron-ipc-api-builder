@@ -19,13 +19,17 @@ type ApiBuilderImplementFn<
   handler: ApiHandlers<Methods, MethodsApi>[Method],
 ) => ApiImplementer<Methods, MethodsApi, Implemented | Method>;
 
-type ApiImplementer<
+type ImplementedApi = {
+  disconnect: () => void;
+};
+
+export type ApiImplementer<
   Methods extends string,
   MethodsApi extends Record<Methods, any[]>,
   Implemented extends string = never,
-> = Utils.Types.Equals<keyof MethodsApi, Implemented> extends true
+> = Utils.Types.Equals<Methods, Implemented> extends true
   ? {
-      finalize: () => void;
+      finalize: () => ImplementedApi;
     }
   : {
       implement: ApiBuilderImplementFn<Methods, MethodsApi, Implemented>;
@@ -62,8 +66,16 @@ export const implementApi: ImplementApiFn = (api: BroadDescriptor) => {
 
   const finalize = () => {
     app.whenReady().then(() => {
-      for (let method of api.methods.values) ipcMain.handle(`${api.name}-${method}`, handlers[method]);
+      for (let method of api.methods.values)
+        ipcMain.handle(`${api.name}-${method}`, handlers[method]);
     });
+
+    return {
+      disconnect: () => {
+        for (let method of api.methods.values)
+          ipcMain.removeHandler(`${api.name}-${method}`);
+      }
+    };
   };
 
   const ipcBuilder = {
@@ -103,9 +115,20 @@ export const createWindowDataContext = <
   api: ApiDescriptor<Name, any, any, any, any, DataKeys, Data>
 ) => {
   const data = {} as Data;
+  const handlers = {} as Record<DataKeys, Utils.Types.AnyFn>;
 
-  for (let dataKey of api.dataKeys.values)
-    ipcMain.on(`${api.name}-set-window-data-${dataKey}`, (_, value) => data[dataKey] = value);
+  for (let dataKey of api.dataKeys.values) {
+    handlers[dataKey] = (_, value) => data[dataKey] = value;
+    ipcMain.on(`${api.name}-set-window-data-${dataKey}`, handlers[dataKey]);
+  }
 
-  return data;
+  const disconnect = () => {
+    for (let dataKey of api.dataKeys.values)
+      ipcMain.off(`${api.name}-set-window-data-${dataKey}`, handlers[dataKey]);
+  }
+
+  return {
+    data,
+    disconnect
+  };
 };
