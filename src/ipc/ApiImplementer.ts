@@ -61,10 +61,9 @@ type BroadDescriptor = {
 export const implementApi: ImplementApiFn = (api: BroadDescriptor) => {
   const handlers = {} as Record<string, Utils.Types.AnyFn>;
 
-  const loggingEnabled = isLoggingEnabled();
   const implement = (method: string, handler: Utils.Types.AnyFn) => {
     handlers[method] = (...args) => {
-      if (loggingEnabled)
+      if (isLoggingEnabled())
         console.log(`Main process received method call '${getMethodChannelName(api.name, method)}'. Args:`, args.slice(1));
       return handler(...args);
     }
@@ -79,7 +78,7 @@ export const implementApi: ImplementApiFn = (api: BroadDescriptor) => {
 
     return {
       disconnect: () => {
-        if (loggingEnabled)
+        if (isLoggingEnabled())
           console.log(`disconnect() called for '${api.name}' Methods.`);
 
         for (let method of api.methods.values)
@@ -134,26 +133,26 @@ export const createWindowDataContext = <
   const data = {} as Data;
   const handlers = {} as Record<DataKeys, Utils.Types.AnyFn>;
 
-  const loggingEnabled = isLoggingEnabled();
-
   for (let dataKey of api.dataKeys.values) {
     const channel = getWindowDataChannelName(api.name, dataKey);
+
     handlers[dataKey] = (_, value) => {
-      if (loggingEnabled)
+      if (isLoggingEnabled())
         console.log(`Main process received window data update on channel '${channel}'. Value:`, value);
+        
       backingData[dataKey] = value;
     }
+
+    ipcMain.on(channel, handlers[dataKey]);
 
     Object.defineProperty(data, dataKey, {
       get: () => backingData[dataKey],
       set: value => backingData[dataKey] = value
     });
-
-    ipcMain.on(channel, handlers[dataKey]);
   }
 
   const disconnect = () => {
-    if (loggingEnabled)
+    if (isLoggingEnabled())
       console.log(`disconnect() called for '${api.name}' WindowDataContext.`);
     
     for (let dataKey of api.dataKeys.values)

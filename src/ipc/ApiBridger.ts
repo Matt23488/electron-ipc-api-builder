@@ -37,14 +37,12 @@ type ExposedApi = {
 export const bridgeApi: BridgeApiFn = (api: BroadDescriptor) => {
   const exposedApi = {} as ExposedApi;
 
-  const loggingEnabled = isLoggingEnabled();
-
   if (api.methods) {
     exposedApi.methods = {};
     for (let method of api.methods.values)
       exposedApi.methods[method] = (...args: any[]) => {
         const channel = getMethodChannelName(api.name, method);
-        if (loggingEnabled)
+        if (isLoggingEnabled())
           console.log(`Renderer invoked method on channel '${channel}'. Args:`, args.slice(1));
         return ipcRenderer.invoke(channel, ...args);
       }
@@ -69,7 +67,7 @@ export const bridgeApi: BridgeApiFn = (api: BroadDescriptor) => {
   if (api.dataKeys) {
     const set = (dataKey: string, value: any) => {
       const channel = getWindowDataChannelName(api.name, dataKey);
-      if (loggingEnabled)
+      if (isLoggingEnabled())
         console.log(`Renderer setting window data on channel '${channel}'. Value:`, value);
       ipcRenderer.send(channel, value);
     }
